@@ -1,6 +1,11 @@
+// ============================================
+// IMPORT THREE.JS
+// ============================================
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { vec2 } from 'three/tsl';
 
-console.log("JavaScript is running!");
+console.log("🌸 Three.js starting...");
 
 // ============================================
 // SCENE SETUP
@@ -9,27 +14,30 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb); // Sky blue
 
 // ============================================
-// CAMERA
+// CAMERA SETUP
 // ============================================
 const camera = new THREE.PerspectiveCamera(
-    75,
+    50,
     window.innerWidth / window.innerHeight,
     0.1,
     1000
 );
-camera.position.z = 5;
+camera.position.set(0, 3, 5);
+camera.lookAt(new THREE.Vector3(0, 0, 0)); // Point camera at origin
+
 
 // ============================================
-// RENDERER
+// RENDERER SETUP
 // ============================================
 const canvas = document.getElementById('canvas3d');
 const renderer = new THREE.WebGLRenderer({ 
-    canvas,
-    antialias: true,
-    alpha: true
+    canvas: canvas,
+    antialias: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
+
+console.log("✅ Scene, camera, renderer created");
 
 // ============================================
 // LIGHTS
@@ -41,15 +49,131 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 
-// ============================================
-// TEST: Add a Simple Spinning Cube
-// ============================================
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshPhongMaterial({ color: 0x6ab04c });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+console.log("✅ Lights added");
 
-console.log("Cube added to scene!");
+// ============================================
+// VARIABLES FOR FLOWER AND ANIMATION
+// ============================================
+let mixer = null;
+let flowerAction = null;
+let flower = null;
+let animationDuration = 0;
+
+// ============================================
+// LOAD FLOWER MODEL
+// ============================================
+const loader = new GLTFLoader();
+
+console.log("📦 Loading flower.glb...");
+
+loader.load(
+    'Flower4.glb',
+    
+    // SUCCESS
+    (gltf) => {
+        console.log("✅ Flower loaded successfully!");
+        
+        // Add flower to scene
+        flower = gltf.scene;
+        scene.add(flower);
+        
+        // Position flower at center
+        flower.position.set(0, 0, 0);
+        
+        console.log("✅ Flower added to scene");
+        
+        // Setup animation if exists
+        if (gltf.animations && gltf.animations.length > 0) {
+            console.log("✅ Found animation!");
+            console.log("   - Duration:", gltf.animations[0].duration, "seconds");
+            console.log("   - Tracks:", gltf.animations[0].tracks.length);
+            
+            // Create animation mixer
+            mixer = new THREE.AnimationMixer(flower);
+            
+            // Get the animation clip
+            const clip = gltf.animations[0];
+            flowerAction = mixer.clipAction(clip);
+            
+            // Store duration
+            animationDuration = clip.duration;
+            
+            // Setup for scroll control
+            flowerAction.play();
+            flowerAction.paused = true; // Pause immediately - we control it with scroll
+            flowerAction.setLoop(THREE.LoopOnce);
+            flowerAction.clampWhenFinished = true;
+            
+            console.log("✅ Animation ready for scroll control");
+            
+        } else {
+            console.warn("⚠️ No animations found in GLTF");
+        }
+    },
+    
+    // PROGRESS
+    (progress) => {
+        const percent = (progress.loaded / progress.total * 100).toFixed(0);
+        console.log("   Loading:", percent + "%");
+    },
+    
+    // ERROR
+    (error) => {
+        console.error("❌ Error loading flower:", error);
+    }
+);
+
+// // ============================================
+// // SCROLL CONTROL
+// // ============================================
+// window.addEventListener('scroll', () => {
+//     // Only run if animation is loaded
+//     if (!mixer || !flowerAction || animationDuration === 0) {
+//         return;
+//     }
+    
+//     // Calculate scroll progress (0 to 1)
+//     const scrollTop = window.scrollY;
+//     const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+//     const scrollProgress = Math.max(0, Math.min(1, scrollTop / scrollHeight));
+    
+//     // Calculate animation time based on scroll
+//     const targetTime = scrollProgress * animationDuration;
+    
+//     // Set animation to that exact time
+//     mixer.setTime(targetTime);
+
+//     mixer.update(0);
+    
+//     // Debug log (comment out if too spammy)
+//     console.log("📜 Scroll:", (scrollProgress * 100).toFixed(0) + "% | Animation:", targetTime.toFixed(2) + "s");
+// });
+
+// ============================================
+// SCROLL CONTROL - ALTERNATIVE METHOD
+// ============================================
+window.addEventListener('scroll', () => {
+    if (!mixer || !flowerAction || animationDuration === 0) {
+        return;
+    }
+    
+    const scrollTop = window.scrollY;
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollProgress = Math.max(0, Math.min(1, scrollTop / scrollHeight));
+    
+    const targetTime = scrollProgress * animationDuration;
+    
+    // Method 1: Set time and update
+    flowerAction.time = targetTime;
+    mixer.update(0);
+    
+    // Method 2: If above doesn't work, force evaluate the action
+    flowerAction.getMixer().update(0);
+    
+    console.log("📜 Scroll:", (scrollProgress * 100).toFixed(0) + "% | Animation:", targetTime.toFixed(2) + "s");
+});
+
+console.log("✅ Scroll listener added");
 
 // ============================================
 // ANIMATION LOOP
@@ -57,13 +181,22 @@ console.log("Cube added to scene!");
 function animate() {
     requestAnimationFrame(animate);
     
-    // Rotate the cube
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
+    // DO NOT UPDATE MIXER - we control it manually with scroll
+    // (If you call mixer.update() here, it will override scroll control)
     
+    // Optional: rotate flower slowly
+    if (flower) {
+        flower.rotation.y += 0.001;
+    }
+    
+    // Render the scene
     renderer.render(scene, camera);
 }
+
+// Start animation loop
 animate();
+
+console.log("✅ Render loop started");
 
 // ============================================
 // HANDLE WINDOW RESIZE
@@ -74,16 +207,4 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ============================================
-// SCROLL TEST
-// ============================================
-window.addEventListener('scroll', () => {
-    const scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-    console.log("Scroll progress:", scrollProgress);
-    
-    // Scale the cube based on scroll
-    const scale = 1 + scrollProgress * 2;
-    cube.scale.set(scale, scale, scale);
-});
-
-console.log("Three.js setup complete!");
+console.log("✅ Setup complete! Scroll to animate the flower 🌸");
