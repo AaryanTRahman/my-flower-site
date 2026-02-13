@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flower Bloom - 3D Interactive</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">Flower Bloom</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section with 3D Canvas -->
+    <section id="hero">
+        <canvas id="canvas3d"></canvas>
+        <div class="hero-content">
+            <h1>Watch Nature Unfold</h1>
+            <p>Scroll down to see the bloom</p>
+        </div>
+    </section>
+
+    <!-- About Section (creates scroll space) -->
+    <section id="about">
+        <div class="container">
+            <h2>About the Flower</h2>
+            <p>This is a 3D flower that blooms as you scroll. The animation is powered by Three.js and controlled by your scroll position.</p>
+            <p>Keep scrolling to see the full transformation from bud to bloom!</p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="container">
+            <h2>Features</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>🌸 3D Animation</h3>
+                    <p>Real-time 3D rendering using Three.js</p>
+                </div>
+                <div class="feature">
+                    <h3>📜 Scroll Control</h3>
+                    <p>Animation synced with scroll position</p>
+                </div>
+                <div class="feature">
+                    <h3>🎨 Beautiful Design</h3>
+                    <p>Clean, modern interface</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <p>Want to learn more about this project?</p>
+            <p>Email: contact@example.com</p>
+        </div>
+    </section>
+
+    <!-- JavaScript -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>
