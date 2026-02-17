@@ -3,7 +3,6 @@
 // ============================================
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { vec2 } from 'three/tsl';
 
 console.log("🌸 Three.js starting...");
 
@@ -17,11 +16,12 @@ scene.background = new THREE.Color(0x87ceeb); // Sky blue
 // CAMERA SETUP
 // ============================================
 const camera = new THREE.PerspectiveCamera(
-    50,
+    25,
     window.innerWidth / window.innerHeight,
     0.1,
     1000
 );
+
 camera.position.set(0, 3, 5);
 camera.lookAt(new THREE.Vector3(0, 0, 0)); // Point camera at origin
 
@@ -34,6 +34,11 @@ const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true
 });
+
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 
@@ -45,9 +50,17 @@ console.log("✅ Scene, camera, renderer created");
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 10);
 directionalLight.position.set(5, 5, 5);
+directionalLight.castShadow = true;
+directionalLight.shadow.camera.left = -10;
+directionalLight.shadow.camera.right = 10;
+directionalLight.shadow.camera.top = 10;
+directionalLight.shadow.camera.bottom = -10;
+directionalLight.shadow.camera.near = 0.5;
+directionalLight.shadow.camera.far = 50;
 scene.add(directionalLight);
+
 
 console.log("✅ Lights added");
 
@@ -57,6 +70,7 @@ console.log("✅ Lights added");
 let mixer = null;
 let flowerAction = null;
 let flower = null;
+window.morphMeshes = []; // ADD THIS LINE HERE - before loader.load()
 let animationDuration = 0;
 
 // ============================================
@@ -67,7 +81,7 @@ const loader = new GLTFLoader();
 console.log("📦 Loading flower.glb...");
 
 loader.load(
-    'Flower4.glb',
+    '/Flower7.glb',
     
     // SUCCESS
     (gltf) => {
@@ -79,6 +93,52 @@ loader.load(
         
         // Position flower at center
         flower.position.set(0, 0, 0);
+
+        // Fix transparency rendering on all meshes
+        flower.traverse((child) => {
+            if (child.isMesh) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                
+                materials.forEach(mat => {
+                    // Check if material has an alpha/transparency map
+                    if (mat.alphaMap || mat.map?.image) {
+                        
+                        // Use alphaTest for hard edges (petals, leaves)
+                        // This cuts out pixels below the threshold cleanly
+                        mat.alphaTest = 0.9; // Adjust 0.0-1.0 (higher = more cutoff)
+                        
+                        // Enable transparency
+                        mat.transparent = true;
+                        
+                        // CRITICAL: Fixes dark fringing on edges
+                        mat.premultipliedAlpha = false;
+                        
+                        // Render both sides of petals (no backface culling)
+                        mat.side = THREE.DoubleSide;
+                        
+                        // Make sure depth write is correct
+                        mat.depthWrite = true;
+                        mat.depthTest = true;
+                        
+                        mat.needsUpdate = true;
+                        
+                        console.log("Fixed transparency on material:", mat.name);
+                    }
+                });
+                
+                // Collect morph meshes SEPARATELY - this is critical!
+                if (child.morphTargetInfluences && child.morphTargetInfluences.length > 0) {
+                 window.morphMeshes.push(child);
+                    console.log("✅ Added morph mesh:", child.name, "| Morphs:", child.morphTargetInfluences.length);
+                    
+                }
+            }
+        });
+        console.log("✅ Total morph meshes found:", window.morphMeshes.length);
+        
+
+        flower.castShadow = true;
+        flower.receiveShadow = true;
         
         console.log("✅ Flower added to scene");
         
@@ -122,6 +182,8 @@ loader.load(
         console.error("❌ Error loading flower:", error);
     }
 );
+
+
 
 // // ============================================
 // // SCROLL CONTROL
