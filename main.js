@@ -47,10 +47,10 @@ console.log("✅ Scene, camera, renderer created");
 // ============================================
 // LIGHTS
 // ============================================
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 2);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 10);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
 directionalLight.position.set(5, 5, 5);
 directionalLight.castShadow = true;
 directionalLight.shadow.camera.left = -10;
@@ -81,7 +81,7 @@ const loader = new GLTFLoader();
 console.log("📦 Loading flower.glb...");
 
 loader.load(
-    '/Flower7.glb',
+    'Flower10/Flower8ExportAsGLTF.gltf',
     
     // SUCCESS
     (gltf) => {
