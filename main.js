@@ -81,7 +81,7 @@ const loader = new GLTFLoader();
 console.log("📦 Loading flower.glb...");
 
 loader.load(
-    'Flower10/Flower8ExportAsGLTF.gltf',
+    'Flower11/Flower11.gltf',
     
     // SUCCESS
     (gltf) => {
@@ -134,6 +134,8 @@ loader.load(
                 }
             }
         });
+
+        
         console.log("✅ Total morph meshes found:", window.morphMeshes.length);
         
 
